@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mod GPS – डैशबोर्ड</title>
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root {
+    --bg: #f3f1ea; --card: #ffffff; --ink: #1d2420; --muted: #66706a; --line: #dcd8cc;
+    --brand: #1f4d33; --go: #2f7d4a; --stop: #b3392f; --warn: #c27c12; --soft: #e7efe9; --grey: #8a918c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", "Noto Sans Devanagari", sans-serif; }
+  button, input, select, textarea { font: inherit; }
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--brand); color: #fff; flex-wrap: wrap; }
+  header b { font-size: 17px; }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav button { background: transparent; color: #dfe9e2; border: 0; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+  nav button.on { background: rgba(255,255,255,.16); color: #fff; font-weight: 600; }
+  header .sp { flex: 1; }
+  header .out { background: transparent; border: 1px solid rgba(255,255,255,.4); color: #fff; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  .hidden { display: none !important; }
+  .wrap { display: flex; height: calc(100vh - 54px); }
+  .map { flex: 1; min-height: 300px; }
+  .side { width: 400px; overflow: auto; border-left: 1px solid var(--line); background: var(--bg); padding: 12px 14px 40px; }
+  @media (max-width: 860px) {
+    .wrap { flex-direction: column; height: auto; }
+    .map { height: 55vh; flex: none; }
+    .side { width: auto; border-left: 0; }
+  }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .bar input, .bar select { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); }
+  .btn { border: 0; background: var(--brand); color: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+  .btn.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+  .btn.red { background: var(--stop); }
+  .btn.small { padding: 4px 8px; font-size: 13px; font-weight: 500; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .card h4 { margin: 0 0 6px; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .kpi b { font-size: 20px; display: block; }
+  .kpi span { font-size: 12px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  td, th { padding: 5px 4px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; border-top: 0; }
+  .tag { display: inline-block; border-radius: 10px; padding: 1px 8px; font-size: 12px; }
+  .t-done { background: #d8eedf; color: #17452a; }
+  .t-half { background: #f6e7c9; color: #5c3d07; }
+  .t-todo { background: #e6e6e3; color: #444; }
+  .t-warn { background: #f8dcd8; color: #6b1d16; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .page { max-width: 980px; margin: 0 auto; padding: 16px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  .page input, .page select, .page textarea, .side input, .side select, .side textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .login { max-width: 360px; margin: 12vh auto; }
+  .err { color: var(--stop); min-height: 1.2em; margin-top: 8px; }
+  .ok { color: var(--go); }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
+  .modal.show { display: flex; }
+  .modal .card { max-width: 460px; width: 100%; }
+  pre.cred { background: var(--bg); padding: 10px; border-radius: 8px; white-space: pre-wrap; font-size: 14px; }
+  .lbl { background: #fff; border: 1px solid #333; border-radius: 6px; padding: 1px 6px; font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .sitelist div { padding: 7px 4px; border-top: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+  .sitelist div:hover { background: var(--soft); }
+  .side .bar input, .side .bar select { width: auto; flex: 1 1 130px; }
+  .gaps { margin-top: 6px; font-size: 13px; }
+  .help { background: var(--soft); border-radius: 8px; padding: 8px 10px; font-size: 13px; margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<section id="scrLogin" class="hidden">
+  <div class="card login">
+    <h3 style="margin-top:0">Mod Entreprenad – डैशबोर्ड</h3>
+    <label>यूज़रनेम</label><input id="lgUser" value="admin" autocapitalize="none">
+    <label>पासवर्ड</label><input id="lgPass" type="password">
+    <div class="err" id="lgErr"></div>
+    <button class="btn" id="lgBtn" style="width:100%;margin-top:6px">लॉग-इन</button>
+  </div>
+</section>
+
+<section id="scrApp" class="hidden">
+  <header>
+    <b>Mod GPS</b>
+    <nav id="nav">
+      <button data-tab="day" class="on">नक्शा / दिन</button>
+      <button data-tab="sites">काम की जगहें</button>
+      <button data-tab="users">आदमी</button>
+      <button data-tab="settings">सेटिंग</button>
+    </nav>
+    <span class="sp"></span>
+    <button class="out" id="btnOut">लॉग-आउट</button>
+  </header>
+
+  <!-- Dag -->
+  <div id="tab-day" class="wrap">
+    <div id="map" class="map"></div>
+    <div class="side">
+      <div class="bar">
+        <input type="date" id="dDate">
+        <select id="dUser"><option value="">सब आदमी</option></select>
+        <select id="dGroup"><option value="">सब ग्रुप</option></select>
+        <button class="btn ghost" id="dReload">↻</button>
+        <button class="btn ghost" id="dCsv">CSV</button>
+      </div>
+      <label style="margin:0 0 8px;display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="dLive" checked style="width:auto"> लाइव (हर मिनट अपडेट, सिर्फ़ आज)</label>
+      <div class="muted" id="dStatus"></div>
+      <div class="kpis" id="kpis"></div>
+      <div id="people"></div>
+      <div class="card">
+        <h4>काम की जगहें</h4>
+        <div class="muted" id="siteSum"></div>
+        <table id="siteTbl"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Platser -->
+  <div id="tab-sites" class="wrap hidden">
+    <div id="smap" class="map"></div>
+    <div class="side">
+      <div class="card">
+        <h4 id="sfTitle">नई जगह</h4>
+        <label>नाम</label><input id="sfName" placeholder="जैसे: BRF Solrosen पार्किंग">
+        <label>पता</label>
+        <div style="display:flex;gap:6px"><input id="sfAddr" placeholder="गली, शहर"><button class="btn ghost" id="sfFind">ढूँढो</button></div>
+        <div class="row2">
+          <div><label>ग्रुप (ऐच्छिक)</label><input id="sfGroup" placeholder="जैसे: बर्फ़, घास" list="groupList"></div>
+          <div><label>दायरा (मीटर)</label><input id="sfRadius" type="number" value="50" min="10" max="2000"></div>
+        </div>
+        <datalist id="groupList"></datalist>
+        <label>शक्ल</label>
+        <select id="sfMode"><option value="circle">गोल (बीच का पॉइंट + दायरा)</option><option value="poly">एरिया (नक्शे पर कोने बनाओ)</option></select>
+        <div class="help" id="sfHelp"></div>
+        <div class="err" id="sfErr"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn" id="sfSave">सेव</button>
+          <button class="btn ghost" id="sfClear">कोने हटाओ</button>
+          <button class="btn ghost" id="sfNew">नई जगह</button>
+          <button class="btn red hidden" id="sfDel">हटाओ</button>
+        </div>
+      </div>
+      <div class="card">
+        <h4>सारी जगहें <span class="muted" id="sCount"></span></h4>
+        <div class="sitelist" id="sList"></div>
+      </div>
+      <div class="card">
+        <h4>कई पते एक साथ जोड़ो</h4>
+        <div class="muted">हर लाइन में: नाम ; पता ; ग्रुप (ग्रुप ऐच्छिक)</div>
+        <textarea id="bulkTxt" rows="5" placeholder="BRF Solrosen ; Storgatan 5, Trosa ; बर्फ़"></textarea>
+        <button class="btn" id="bulkBtn" style="margin-top:6px">जोड़ो</button>
+        <div class="muted" id="bulkLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Användare -->
+  <div id="tab-users" class="page hidden">
+    <div class="card">
+      <h4>नया आदमी जोड़ो</h4>
+      <div class="row2">
+        <div><label>नाम</label><input id="nuName" placeholder="जैसे: Harpreet Singh"></div>
+        <div><label>यूज़रनेम</label><input id="nuUser" placeholder="जैसे: harpreet" autocapitalize="none"></div>
+      </div>
+      <label>भूमिका</label>
+      <select id="nuRole"><option value="worker">आदमी (फ़ोन से ट्रैकिंग)</option><option value="admin">एडमिन (डैशबोर्ड देख सकता है)</option></select>
+      <div class="err" id="nuErr"></div>
+      <button class="btn" id="nuBtn">जोड़ो और पासवर्ड बनाओ</button>
+    </div>
+    <div class="card">
+      <h4>सारे अकाउंट</h4>
+      <table id="uTbl"></table>
+      <p class="muted">"फ़ोन रीसेट" तब दबाओ जब किसी आदमी ने फ़ोन बदला हो। "नया पासवर्ड" से पुराना पासवर्ड तुरंत बंद हो जाता है।</p>
+    </div>
+    <div class="card">
+      <h4>मेरा पासवर्ड बदलो</h4>
+      <div class="row2">
+        <div><label>अभी का पासवर्ड</label><input id="cpOld" type="password"></div>
+        <div><label>नया पासवर्ड</label><input id="cpNew" type="password"></div>
+      </div>
+      <div class="err" id="cpErr"></div>
+      <button class="btn" id="cpBtn">बदलो</button>
+    </div>
+  </div>
+
+  <!-- Inställningar -->
+  <div id="tab-settings" class="page hidden">
+    <div class="card">
+      <h4>सेटिंग</h4>
+      <div class="row2">
+        <div><label>शाम को अपने आप बंद (जैसे 19:00, ख़ाली = बंद)</label><input id="st_autoStopTime"></div>
+        <div><label>ज़्यादा से ज़्यादा घंटे एक शिफ़्ट</label><input id="st_maxShiftHours" type="number"></div>
+        <div><label>"रुका" — कम से कम मिनट</label><input id="st_stopMinutes" type="number"></div>
+        <div><label>"रुका" — इतने मीटर के अंदर</label><input id="st_stopRadius" type="number"></div>
+        <div><label>जगह "हो गई" — कम से कम मिनट वहाँ</label><input id="st_doneMinutes" type="number"></div>
+        <div><label>काम की जगह से दूर रुका — इतने मिनट बाद पूछो</label><input id="st_awayMinutes" type="number"></div>
+        <div><label>डेटा कितने महीने रखना है</label><input id="st_retentionMonths" type="number"></div>
+        <div><label>एक अकाउंट = एक फ़ोन</label><select id="st_deviceBinding"><option value="yes">हाँ</option><option value="no">नहीं</option></select></div>
+      </div>
+      <label>काम के प्रकार (कॉमा से अलग करो)</label><input id="st_workTypes">
+      <div class="help">शाम का अपने आप बंद होना सिर्फ़ उन शिफ़्टों पर लागू होता है जो उस समय से पहले शुरू हुईं। रात को बर्फ़ हटाने का काम उस समय के बाद शुरू होगा, तो वो नहीं रुकेगा — उसके लिए "ज़्यादा से ज़्यादा घंटे" वाली सीमा है।</div>
+      <div class="err" id="stErr"></div>
+      <button class="btn" id="stSave">सेव</button>
+    </div>
+    <div class="card">
+      <h4>आदमियों वाला लिंक</h4>
+      <pre class="cred" id="workerLink"></pre>
+    </div>
+  </div>
+</section>
+
+<div class="modal" id="modal"><div class="card">
+  <h4 id="mTitle"></h4><div id="mBody"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px" id="mBtns"></div>
+</div></div>
+
+<script src="config.js"></script>
+<script src="geo.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+'use strict';
+var CFG = window.APP_CONFIG || {};
+var KEY = 'modgps_admin_v1';
+var A = {};
+try { A = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ token: A.token })); } catch (e) {} }
+var $ = function (id) { return document.getElementById(id); };
+var COLORS = ['#2563eb', '#d9480f', '#7b2cbf', '#0f8b8d', '#c2185b', '#5f7d1a', '#b45309', '#334155', '#0e7490', '#9d174d'];
+var REASON = {
+  manual: 'ख़ुद ख़त्म किया', auto_time: 'शाम को अपने आप', auto_maxhours: 'ज़्यादा घंटे — अपने आप',
+  auto_away: 'जगह से दूर — अपने आप', away_confirmed: 'दूर होने पर ख़ुद ख़त्म', auto_nosignal: 'सिग्नल नहीं — सर्वर ने बंद किया',
+};
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function clock(ts) { var d = new Date(ts); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function hm(ms) { var m = Math.max(0, Math.round(ms / 60000)); return Math.floor(m / 60) + ':' + ('0' + (m % 60)).slice(-2); }
+function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function ago(ts) { var m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'अभी' : m < 60 ? m + ' मिनट पहले' : hm(Date.now() - ts) + ' घंटे पहले'; }
+
+function api(action, payload) {
+  if (!CFG.API_URL || /KLISTRA/.test(CFG.API_URL)) return Promise.reject(new Error('config.js में API_URL नहीं डाला गया।'));
+  return fetch(CFG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action: action, token: A.token }, payload || {})) })
+    .catch(function () { throw new Error('नेटवर्क की दिक्कत।'); })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (!j.ok) {
+        if (j.error === 'auth' || j.error === 'forbidden') { A.token = null; save(); show(); }
+        var msg = { login: 'ग़लत यूज़रनेम या पासवर्ड।', locked: 'बहुत बार ग़लत कोशिश। 15 मिनट बाद।', forbidden: 'ये अकाउंट एडमिन नहीं है।' }[j.error] || j.message;
+        throw Object.assign(new Error(msg), { code: j.error });
+      }
+      return j.data;
+    });
+}
+
+function modal(title, html, btns) {
+  $('mTitle').textContent = title; $('mBody').innerHTML = html;
+  var row = $('mBtns'); row.innerHTML = '';
+  (btns || [{ label: 'ठीक है' }]).forEach(function (b) {
+    var el = document.createElement('button'); el.className = 'btn ' + (b.cls || ''); el.textContent = b.label;
+    el.onclick = function () { $('modal').classList.remove('show'); if (b.fn) b.fn(); };
+    row.appendChild(el);
+  });
+  $('modal').classList.add('show');
+}
+
+/* ---------------- login ---------------- */
+function show() {
+  var inApp = !!A.token;
+  $('scrLogin').classList.toggle('hidden', inApp);
+  $('scrApp').classList.toggle('hidden', !inApp);
+  if (inApp) { tab(A.tab || 'day'); }
+}
+$('lgBtn').onclick = function () {
+  $('lgErr').textContent = '';
+  api('login', { username: $('lgUser').value.trim().toLowerCase(), password: $('lgPass').value, deviceId: 'admin-web' }).then(function (r) {
+    if (r.profile.role !== 'admin') { $('lgErr').textContent = 'ये अकाउंट एडमिन नहीं है।'; return; }
+    A.token = r.token; save(); $('lgPass').value = ''; show();
+  }).catch(function (e) { $('lgErr').textContent = e.message; });
+};
+$('lgPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('lgBtn').click(); });
+$('btnOut').onclick = function () { api('logout').catch(function () {}); A.token = null; save(); show(); };
+
+/* ---------------- tabs ---------------- */
+var map, smap;
+function tab(name) {
+  A.tab = name;
+  document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === name); });
+  ['day', 'sites', 'users', 'settings'].forEach(function (n) { $('tab-' + n).classList.toggle('hidden', n !== name); });
+  if (name === 'day') { initMap(); loadDay(true); }
+  if (name === 'sites') { initSiteMap(); loadSites(); }
+  if (name === 'users') loadUsers();
+  if (name === 'settings') loadSettings();
+}
+document.querySelectorAll('#nav button').forEach(function (b) { b.onclick = function () { tab(b.getAttribute('data-tab')); }; });
+
+function baseMap(id) {
+  var m = L.map(id, { zoomControl: true }).setView([59.03, 17.6], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m);
+  return m;
+}
+
+/* ---------------- dag ---------------- */
+var dayLayer, D = null, fitted = false, liveTimer = null;
+function initMap() {
+  if (!map) { map = baseMap('map'); dayLayer = L.layerGroup().addTo(map); }
+  setTimeout(function () { map.invalidateSize(); }, 50);
+}
+$('dDate').value = today();
+$('dDate').onchange = function () { fitted = false; loadDay(true); };
+$('dUser').onchange = function () { fitted = false; drawDay(); };
+$('dGroup').onchange = function () { drawDay(); };
+$('dReload').onclick = function () { loadDay(true); };
+$('dLive').onchange = function () { loadDay(false); };
+
+function loadDay(showLoading) {
+  if (showLoading) $('dStatus').textContent = 'लोड हो रहा है…';
+  clearTimeout(liveTimer);
+  return api('adminDay', { date: $('dDate').value }).then(function (d) {
+    D = d; drawDay();
+    $('dStatus').textContent = 'अपडेट: ' + clock(Date.now());
+  }).catch(function (e) { $('dStatus').textContent = e.message; })
+    .then(function () {
+      if ($('dLive').checked && $('dDate').value === today() && A.tab === 'day' && A.token) liveTimer = setTimeout(function () { loadDay(false); }, 60000);
+    });
+}
+
+function nameOf(u) { var x = (D.users || []).find(function (r) { return r.username === u; }); return x ? x.name : u; }
+
+function analyse() {
+  var st = D.settings, people = {}, colorIx = 0;
+  function person(u) {
+    if (!people[u]) people[u] = { username: u, name: nameOf(u), color: COLORS[colorIx++ % COLORS.length], shifts: [], pts: [], stops: [], gaps: [], viaOthers: [] };
+    return people[u];
+  }
+  (D.users || []).filter(function (u) { return u.role === 'worker'; }).forEach(function (u) { person(u.username); });
+  Object.keys(D.points).forEach(function (u) { person(u).pts = D.points[u]; });
+  D.shifts.forEach(function (s) {
+    person(s.username).shifts.push(s);
+    s.companions.forEach(function (c) { if (c) person(c).viaOthers.push({ shift: s, host: s.username }); });
+  });
+  Object.keys(people).forEach(function (u) {
+    var p = people[u];
+    p.stops = Geo.detectStops(p.pts, { radius: st.stopRadius, minMinutes: st.stopMinutes });
+    p.stops.forEach(function (s) { var n = Geo.nearestSite(s.lat, s.lng, D.sites, 25); s.site = n ? n.site : null; });
+    // luckor inom varje pass
+    p.shifts.forEach(function (s) {
+      var sp = p.pts.filter(function (x) { return x[4] === s.shiftId; });
+      var first = sp.length ? sp[0][0] : null;
+      if (first && first - s.start > 10 * 60000) p.gaps.push({ from: s.start, to: first, minutes: Math.round((first - s.start) / 60000) });
+      p.gaps = p.gaps.concat(Geo.detectGaps(sp, 10));
+      var endTs = s.end || Date.now();
+      var last = sp.length ? sp[sp.length - 1][0] : s.start;
+      if (endTs - last > 10 * 60000) p.gaps.push({ from: last, to: endTs, minutes: Math.round((endTs - last) / 60000), open: !s.end });
+    });
+    p.ms = 0;
+    p.shifts.forEach(function (s) { p.ms += Math.min(s.end || Date.now(), D.to) - Math.max(s.start, D.from); });
+    p.viaOthers.forEach(function (v) { p.ms += Math.min(v.shift.end || Date.now(), D.to) - Math.max(v.shift.start, D.from); });
+    p.active = p.shifts.some(function (s) { return !s.end; });
+    p.last = p.pts.length ? p.pts[p.pts.length - 1] : null;
+  });
+
+  // platser
+  var sites = D.sites.map(function (site) {
+    var r = { site: site, minutes: 0, by: [], doneEvent: null, coverage: null, inside: false };
+    Object.keys(people).forEach(function (u) {
+      var p = people[u], m = Geo.minutesAtSite(p.stops, site, 25);
+      if (m > 0) { r.minutes += m; r.by.push(p.name + ' (' + m + ' मि.)'); }
+      if (!r.inside && p.pts.some(function (x) { return Geo.inSite(x[1], x[2], site, 10); })) r.inside = true;
+    });
+    D.events.forEach(function (e) { if (e.type === 'done' && e.siteId === site.id) r.doneEvent = e; });
+    if (site.polygon && site.polygon.length >= 3) {
+      r.coverage = Geo.coverage(site.polygon, Object.keys(people).map(function (u) { return people[u].pts; }).filter(function (a) { return a.length; }), 4);
+    }
+    r.status = (r.doneEvent || r.minutes >= st.doneMinutes) ? 'done' : (r.minutes > 0 || r.inside) ? 'half' : 'todo';
+    return r;
+  });
+  return { people: people, sites: sites };
+}
+
+function drawDay() {
+  if (!D) return;
+  var R = analyse(), fu = $('dUser').value, fg = $('dGroup').value;
+  // filter-listor
+  var opts = '<option value="">सब आदमी</option>' + Object.keys(R.people).map(function (u) { return '<option value="' + esc(u) + '"' + (u === fu ? ' selected' : '') + '>' + esc(R.people[u].name) + '</option>'; }).join('');
+  $('dUser').innerHTML = opts;
+  var groups = {}; D.sites.forEach(function (s) { if (s.group) groups[s.group] = 1; });
+  $('dGroup').innerHTML = '<option value="">सब ग्रुप</option>' + Object.keys(groups).sort().map(function (g) { return '<option' + (g === fg ? ' selected' : '') + '>' + esc(g) + '</option>'; }).join('');
+
+  dayLayer.clearLayers();
+  var bounds = [];
+  var sites = R.sites.filter(function (r) { return !fg || r.site.group === fg; });
+  var col = { done: '#2f7d4a', half: '#c27c12', todo: '#8a918c' };
+  sites.forEach(function (r) {
+    var s = r.site, c = col[r.status], layer;
+    var style = { color: c, weight: 2, fillColor: c, fillOpacity: r.status === 'todo' ? 0.08 : 0.25 };
+    if (s.polygon && s.polygon.length >= 3) layer = L.polygon(s.polygon, style);
+    else layer = L.circle([s.lat, s.lng], Object.assign({ radius: s.radius }, style));
+    layer.bindTooltip(esc(s.name)).bindPopup(sitePopup(r)).addTo(dayLayer);
+    bounds.push([s.lat, s.lng]);
+  });
+
+  var list = Object.keys(R.people).map(function (u) { return R.people[u]; })
+    .filter(function (p) { return (!fu || p.username === fu) && (p.pts.length || p.shifts.length || p.viaOthers.length); });
+
+  list.forEach(function (p) {
+    // spår, bryt vid luckor
+    var seg = [], segs = [];
+    p.pts.forEach(function (x, i) {
+      if (i && (x[0] - p.pts[i - 1][0] > 10 * 60000 || x[4] !== p.pts[i - 1][4])) { if (seg.length > 1) segs.push(seg); seg = []; }
+      seg.push([x[1], x[2]]); bounds.push([x[1], x[2]]);
+    });
+    if (seg.length > 1) segs.push(seg);
+    segs.forEach(function (s) { L.polyline(s, { color: p.color, weight: 4, opacity: 0.8 }).addTo(dayLayer); });
+    p.stops.forEach(function (s) {
+      L.circleMarker([s.lat, s.lng], { radius: Math.min(16, 5 + s.minutes / 10), color: '#fff', weight: 2, fillColor: p.color, fillOpacity: 0.95 })
+        .bindPopup('<b>' + esc(p.name) + '</b><br>' + clock(s.start) + '–' + clock(s.end) + ' · <b>' + s.minutes + ' मिनट</b> रुका' + (s.site ? '<br>जगह: ' + esc(s.site.name) : '<br><span style="color:#b3392f">काम की जगह नहीं</span>') + (s.gap ? '<br><i>बीच में ट्रैकिंग बंद थी</i>' : ''))
+        .addTo(dayLayer);
+    });
+    if (p.last) {
+      L.marker([p.last[1], p.last[2]], { icon: L.divIcon({ className: '', html: '<div class="lbl" style="border-color:' + p.color + '">' + esc(p.name) + ' · ' + clock(p.last[0]) + '</div>', iconSize: null, iconAnchor: [0, 0] }) }).addTo(dayLayer);
+      L.circleMarker([p.last[1], p.last[2]], { radius: 7, color: '#000', weight: 2, fillColor: p.color, fillOpacity: 1 }).addTo(dayLayer);
+    }
+  });
+  if (!fitted && bounds.length) { map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 }); fitted = true; }
+
+  // KPI
+  var totalMs = list.reduce(function (a, p) { return a + p.ms; }, 0);
+  var nDone = sites.filter(function (r) { return r.status === 'done'; }).length;
+  $('kpis').innerHTML =
+    '<div class="kpi"><b>' + list.filter(function (p) { return p.active; }).length + '</b><span>अभी काम पर</span></div>' +
+    '<div class="kpi"><b>' + hm(totalMs) + '</b><span>कुल घंटे</span></div>' +
+    '<div class="kpi"><b>' + nDone + '/' + sites.length + '</b><span>जगहें हो गईं</span></div>';
+
+  // personer
+  $('people').innerHTML = list.length ? list.map(personCard).join('') : '<div class="card muted">इस दिन का कोई डेटा नहीं।</div>';
+  document.querySelectorAll('[data-focus]').forEach(function (el) {
+    el.onclick = function () {
+      var p = R.people[el.getAttribute('data-focus')];
+      var b = p.pts.map(function (x) { return [x[1], x[2]]; });
+      if (b.length) map.fitBounds(b, { padding: [30, 30], maxZoom: 17 });
+      window.scrollTo(0, 0);
+    };
+  });
+
+  // platstabell
+  var order = { todo: 0, half: 1, done: 2 };
+  sites.sort(function (a, b) { return order[a.status] - order[b.status] || a.site.name.localeCompare(b.site.name); });
+  $('siteSum').textContent = sites.length ? ('हो गई ' + nDone + ' · आधी ' + sites.filter(function (r) { return r.status === 'half'; }).length + ' · बाकी ' + sites.filter(function (r) { return r.status === 'todo'; }).length) : 'अभी कोई जगह नहीं जोड़ी गई — "काम की जगहें" टैब में जोड़ो।';
+  $('siteTbl').innerHTML = sites.length ? '<tr><th>जगह</th><th>हाल</th><th>किसने / कितनी देर</th></tr>' + sites.map(function (r) {
+    var tag = r.status === 'done' ? '<span class="tag t-done">हो गई</span>' : r.status === 'half' ? '<span class="tag t-half">आधी</span>' : '<span class="tag t-todo">बाकी</span>';
+    return '<tr><td>' + esc(r.site.name) + (r.site.group ? '<div class="muted">' + esc(r.site.group) + '</div>' : '') + '</td><td>' + tag + (r.coverage != null ? '<div class="muted">' + r.coverage + '% एरिया</div>' : '') + '</td><td class="muted">' + (r.by.join(', ') || '–') + (r.doneEvent ? '<br>✓ ' + esc(nameOf(r.doneEvent.username)) + ' ' + clock(r.doneEvent.ts) : '') + '</td></tr>';
+  }).join('') : '';
+}
+
+function sitePopup(r) {
+  var s = r.site;
+  return '<b>' + esc(s.name) + '</b>' + (s.address ? '<br>' + esc(s.address) : '') +
+    '<br>हाल: ' + ({ done: 'हो गई', half: 'आधी / सिर्फ़ गुज़रे', todo: 'बाकी' })[r.status] +
+    (r.minutes ? '<br>रुके: ' + r.minutes + ' मिनट' : '') +
+    (r.coverage != null ? '<br>एरिया कवर: ' + r.coverage + '%' : '') +
+    (r.by.length ? '<br>' + esc(r.by.join(', ')) : '');
+}
+
+function personCard(p) {
+  var shifts = p.shifts.map(function (s) {
+    var comp = s.companions.filter(String).map(nameOf);
+    var warn = s.endReason && s.endReason !== 'manual';
+    return '<tr><td>' + clock(s.start) + '–' + (s.end ? clock(s.end) : '<b>चालू</b>') + '</td><td>' + hm((s.end || Date.now()) - s.start) + '</td><td>' + esc(s.workType) +
+      (comp.length ? '<div class="muted">साथ: ' + esc(comp.join(', ')) + '</div>' : '') +
+      (s.end && warn ? '<div><span class="tag t-warn">' + esc(REASON[s.endReason] || s.endReason) + '</span></div>' : '') + '</td></tr>';
+  }).join('');
+  var via = p.viaOthers.map(function (v) {
+    var s = v.shift;
+    return '<tr><td>' + clock(s.start) + '–' + (s.end ? clock(s.end) : 'चालू') + '</td><td>' + hm((s.end || Date.now()) - s.start) + '</td><td>' + esc(s.workType) + '<div class="muted">' + esc(nameOf(v.host)) + ' के फ़ोन से</div></td></tr>';
+  }).join('');
+  var stops = p.stops.map(function (s) {
+    return '<tr><td>' + clock(s.start) + '–' + clock(s.end) + '</td><td>' + s.minutes + ' मि.</td><td>' + (s.site ? esc(s.site.name) : '<span style="color:var(--stop)">काम की जगह नहीं</span>') + '</td></tr>';
+  }).join('');
+  var gaps = p.gaps.map(function (g) {
+    return '<div><span class="tag t-warn">ट्रैकिंग बंद</span> ' + clock(g.from) + '–' + clock(g.to) + ' (' + g.minutes + ' मिनट)' + (g.open ? ' — अभी भी' : '') + '</div>';
+  }).join('');
+  return '<div class="card"><h4><span class="sw" style="background:' + p.color + '"></span><span>' + esc(p.name) + '</span>' +
+    (p.active ? '<span class="tag t-done">काम पर</span>' : '') + '<span style="flex:1"></span><b>' + hm(p.ms) + '</b>' +
+    (p.pts.length ? '<button class="btn ghost small" data-focus="' + esc(p.username) + '">नक्शे पर</button>' : '') + '</h4>' +
+    (p.last ? '<div class="muted">आख़िरी लोकेशन: ' + clock(p.last[0]) + ' (' + ago(p.last[0]) + ')</div>' : '') +
+    (shifts || via ? '<table><tr><th>समय</th><th>घंटे</th><th>काम</th></tr>' + shifts + via + '</table>' : '') +
+    (gaps ? '<div class="gaps">' + gaps + '</div>' : '') +
+    (stops ? '<details><summary>कहाँ रुका (' + p.stops.length + ')</summary><table>' + stops + '</table></details>' : '') +
+    '</div>';
+}
+
+$('dCsv').onclick = function () {
+  if (!D) return;
+  var R = analyse(), lines = [['Typ', 'Datum', 'Namn', 'Från', 'Till', 'Timmar', 'Arbete / Plats', 'Med', 'Avslutad']];
+  var dec = function (ms) { return (Math.round(ms / 36000) / 100).toFixed(2).replace('.', ','); };
+  Object.keys(R.people).forEach(function (u) {
+    var p = R.people[u];
+    p.shifts.forEach(function (s) { lines.push(['Pass', D.date, p.name, clock(s.start), s.end ? clock(s.end) : '', dec((s.end || Date.now()) - s.start), s.workType, s.companions.filter(String).map(nameOf).join(', '), REASON[s.endReason] || s.endReason || 'pågår']); });
+    p.viaOthers.forEach(function (v) { var s = v.shift; lines.push(['Pass (via ' + nameOf(v.host) + ')', D.date, p.name, clock(s.start), s.end ? clock(s.end) : '', dec((s.end || Date.now()) - s.start), s.workType, '', '']); });
+  });
+  Object.keys(R.people).forEach(function (u) {
+    var p = R.people[u];
+    p.stops.forEach(function (s) { lines.push(['Stopp', D.date, p.name, clock(s.start), clock(s.end), dec(s.end - s.start), s.site ? s.site.name : 'Okänd plats (' + s.lat.toFixed(5) + ' ' + s.lng.toFixed(5) + ')', '', '']); });
+  });
+  var csv = '﻿' + lines.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(';'); }).join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'mod-gps-' + D.date + '.csv'; a.click();
+};
+
+/* ---------------- platser ---------------- */
+var siteLayer, editLayer, SITES = [], edit = null;
+function initSiteMap() {
+  if (!smap) {
+    smap = baseMap('smap'); siteLayer = L.layerGroup().addTo(smap); editLayer = L.layerGroup().addTo(smap);
+    smap.on('click', function (e) {
+      if (!edit) newSite();
+      if ($('sfMode').value === 'poly') { edit.polygon = edit.polygon || []; edit.polygon.push([+e.latlng.lat.toFixed(6), +e.latlng.lng.toFixed(6)]); }
+      else { edit.lat = +e.latlng.lat.toFixed(6); edit.lng = +e.latlng.lng.toFixed(6); }
+      drawEdit();
+    });
+  }
+  setTimeout(function () { smap.invalidateSize(); }, 50);
+}
+function loadSites() {
+  return api('me').then(function (p) { SITES = p.sites; drawSites(); if (!edit) newSite(); });
+}
+function drawSites() {
+  siteLayer.clearLayers();
+  var b = [], groups = {};
+  SITES.forEach(function (s) {
+    var style = { color: '#1f4d33', weight: 2, fillOpacity: 0.12 };
+    var l = s.polygon && s.polygon.length >= 3 ? L.polygon(s.polygon, style) : L.circle([s.lat, s.lng], Object.assign({ radius: s.radius }, style));
+    l.bindTooltip(esc(s.name)).on('click', function (ev) { L.DomEvent.stopPropagation(ev); editSite(s); }).addTo(siteLayer);
+    b.push([s.lat, s.lng]); if (s.group) groups[s.group] = 1;
+  });
+  $('groupList').innerHTML = Object.keys(groups).map(function (g) { return '<option value="' + esc(g) + '">'; }).join('');
+  if (b.length && !drawSites.fitted) { smap.fitBounds(b, { padding: [30, 30], maxZoom: 15 }); drawSites.fitted = true; }
+  $('sCount').textContent = '(' + SITES.length + ')';
+  var sorted = SITES.slice().sort(function (a, c) { return (a.group || '').localeCompare(c.group || '') || a.name.localeCompare(c.name); });
+  $('sList').innerHTML = sorted.map(function (s) { return '<div data-id="' + esc(s.id) + '"><span>' + esc(s.name) + '</span><span class="muted">' + esc(s.group || '') + (s.polygon ? ' · एरिया' : ' · ' + s.radius + ' मी.') + '</span></div>'; }).join('') || '<div class="muted">अभी कोई जगह नहीं।</div>';
+  $('sList').querySelectorAll('[data-id]').forEach(function (el) {
+    el.onclick = function () { var s = SITES.find(function (x) { return x.id === el.getAttribute('data-id'); }); editSite(s); };
+  });
+}
+function newSite() {
+  edit = { name: '', address: '', group: '', radius: 50, lat: null, lng: null, polygon: null };
+  fillForm();
+}
+function editSite(s) {
+  edit = JSON.parse(JSON.stringify(s)); fillForm();
+  if (s.polygon) smap.fitBounds(s.polygon, { maxZoom: 18 }); else smap.setView([s.lat, s.lng], 17);
+}
+function fillForm() {
+  $('sfTitle').textContent = edit.id ? 'जगह बदलो' : 'नई जगह';
+  $('sfName').value = edit.name; $('sfAddr').value = edit.address || ''; $('sfGroup').value = edit.group || ''; $('sfRadius').value = edit.radius || 50;
+  $('sfMode').value = edit.polygon && edit.polygon.length ? 'poly' : 'circle';
+  $('sfDel').classList.toggle('hidden', !edit.id); $('sfErr').textContent = '';
+  modeHelp(); drawEdit();
+}
+function modeHelp() {
+  $('sfHelp').textContent = $('sfMode').value === 'poly'
+    ? 'नक्शे पर एरिया के कोनों पर एक-एक करके क्लिक करो (कम से कम 3)। ग़लती हो तो "कोने हटाओ"।'
+    : 'पता ढूँढो या नक्शे पर क्लिक करके जगह का बीच का पॉइंट चुनो।';
+}
+$('sfMode').onchange = function () { if ($('sfMode').value === 'circle') edit.polygon = null; modeHelp(); drawEdit(); };
+$('sfRadius').oninput = function () { edit.radius = +this.value || 50; drawEdit(); };
+$('sfClear').onclick = function () { edit.polygon = $('sfMode').value === 'poly' ? [] : null; drawEdit(); };
+$('sfNew').onclick = newSite;
+function drawEdit() {
+  editLayer.clearLayers();
+  if (!edit) return;
+  if (edit.polygon && edit.polygon.length) {
+    L.polygon(edit.polygon, { color: '#d9480f', weight: 3, dashArray: '6 4', fillOpacity: 0.2 }).addTo(editLayer);
+    edit.polygon.forEach(function (p) { L.circleMarker(p, { radius: 5, color: '#d9480f', fillOpacity: 1 }).addTo(editLayer); });
+  } else if (edit.lat != null) {
+    L.circle([edit.lat, edit.lng], { radius: edit.radius || 50, color: '#d9480f', weight: 3, dashArray: '6 4', fillOpacity: 0.2 }).addTo(editLayer);
+  }
+}
+function geocode(q) {
+  return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=se&q=' + encodeURIComponent(q), { headers: { 'Accept-Language': 'sv' } })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { return j && j[0] ? { lat: +(+j[0].lat).toFixed(6), lng: +(+j[0].lon).toFixed(6) } : null; });
+}
+$('sfFind').onclick = function () {
+  var q = $('sfAddr').value.trim(); if (!q) return;
+  $('sfErr').textContent = 'ढूँढ रहा हूँ…';
+  geocode(q).then(function (g) {
+    if (!g) { $('sfErr').textContent = 'पता नहीं मिला। नक्शे पर ख़ुद क्लिक करो।'; return; }
+    $('sfErr').textContent = '';
+    edit.lat = g.lat; edit.lng = g.lng; smap.setView([g.lat, g.lng], 17); drawEdit();
+  }).catch(function () { $('sfErr').textContent = 'पता ढूँढने में दिक्कत।'; });
+};
+$('sfSave').onclick = function () {
+  edit.name = $('sfName').value.trim(); edit.address = $('sfAddr').value.trim(); edit.group = $('sfGroup').value.trim(); edit.radius = +$('sfRadius').value || 50;
+  if (edit.polygon && edit.polygon.length) {
+    if (edit.polygon.length < 3) { $('sfErr').textContent = 'एरिया के कम से कम 3 कोने चाहिए।'; return; }
+    var c = edit.polygon.reduce(function (a, p) { return [a[0] + p[0], a[1] + p[1]]; }, [0, 0]);
+    edit.lat = +(c[0] / edit.polygon.length).toFixed(6); edit.lng = +(c[1] / edit.polygon.length).toFixed(6);
+  } else edit.polygon = null;
+  if (!edit.name) { $('sfErr').textContent = 'नाम लिखो।'; return; }
+  if (edit.lat == null) { $('sfErr').textContent = 'पता ढूँढो या नक्शे पर क्लिक करो।'; return; }
+  api('saveSite', { site: edit }).then(function (s) { SITES = s; drawSites(); newSite(); $('sfErr').innerHTML = '<span class="ok">सेव हो गया।</span>'; })
+    .catch(function (e) { $('sfErr').textContent = e.message; });
+};
+$('sfDel').onclick = function () {
+  modal('जगह हटाओ?', '<p>' + esc(edit.name) + ' लिस्ट से हट जाएगी। पुराना डेटा रहेगा।</p>', [{ label: 'नहीं', cls: 'ghost' }, { label: 'हाँ, हटाओ', cls: 'red', fn: function () {
+    api('deleteSite', { id: edit.id }).then(function (s) { SITES = s; drawSites(); newSite(); });
+  } }]);
+};
+$('bulkBtn').onclick = function () {
+  var lines = $('bulkTxt').value.split('\n').map(function (l) { return l.trim(); }).filter(String);
+  if (!lines.length) return;
+  var log = $('bulkLog'), ok = 0, fail = [];
+  log.textContent = 'शुरू…';
+  var i = 0;
+  (function next() {
+    if (i >= lines.length) {
+      log.innerHTML = ok + ' जगहें जुड़ गईं.' + (fail.length ? '<br><span style="color:var(--stop)">नहीं मिलीं (नक्शे पर ख़ुद जोड़ो): ' + esc(fail.join(', ')) + '</span>' : '');
+      $('bulkTxt').value = fail.length ? lines.filter(function (l) { return fail.indexOf(l.split(';')[0].trim()) >= 0; }).join('\n') : '';
+      return;
+    }
+    var parts = lines[i++].split(';').map(function (x) { return x.trim(); });
+    var name = parts[0], addr = parts[1] || parts[0], group = parts[2] || '';
+    log.textContent = i + '/' + lines.length + ': ' + name;
+    geocode(addr).then(function (g) {
+      if (!g) { fail.push(name); return; }
+      return api('saveSite', { site: { name: name, address: addr, group: group, radius: 50, lat: g.lat, lng: g.lng } }).then(function (s) { SITES = s; drawSites(); ok++; });
+    }).catch(function () { fail.push(name); }).then(function () { setTimeout(next, 1100); });
+  })();
+};
+
+/* ---------------- användare ---------------- */
+function workerUrl() { return new URL('./', location.href).href; }
+function credText(username, password) {
+  return 'लिंक: ' + workerUrl() + '\nयूज़रनेम: ' + username + '\nपासवर्ड: ' + password + '\n\nलिंक खोलो, लॉग-इन करो, फिर ब्राउज़र के मेन्यू से "होम स्क्रीन पर जोड़ें" दबाओ।';
+}
+function showCred(title, username, password) {
+  var txt = credText(username, password);
+  modal(title, '<pre class="cred" id="credTxt">' + esc(txt) + '</pre><p class="muted">ये पासवर्ड सिर्फ़ अभी दिख रहा है। कॉपी करके आदमी को भेज दो।</p>', [
+    { label: 'कॉपी', cls: 'ghost', fn: function () { if (navigator.clipboard) navigator.clipboard.writeText(txt); } },
+    { label: 'ठीक है' },
+  ]);
+}
+$('nuName').oninput = function () {
+  if ($('nuUser').dataset.touched) return;
+  $('nuUser').value = this.value.trim().split(/\s+/)[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9._-]/g, '');
+};
+$('nuUser').oninput = function () { this.dataset.touched = 1; };
+$('nuBtn').onclick = function () {
+  $('nuErr').textContent = '';
+  api('addUser', { name: $('nuName').value.trim(), username: $('nuUser').value.trim().toLowerCase(), role: $('nuRole').value }).then(function (r) {
+    $('nuName').value = ''; $('nuUser').value = ''; delete $('nuUser').dataset.touched;
+    showCred('अकाउंट बन गया', r.username, r.password); loadUsers();
+  }).catch(function (e) { $('nuErr').textContent = e.message; });
+};
+function loadUsers() {
+  api('listUsers').then(function (users) {
+    $('uTbl').innerHTML = '<tr><th>नाम</th><th>यूज़रनेम</th><th>भूमिका</th><th>फ़ोन</th><th></th></tr>' + users.map(function (u) {
+      return '<tr style="' + (u.active ? '' : 'opacity:.5') + '"><td>' + esc(u.name) + '</td><td>' + esc(u.username) + '</td><td>' + (u.role === 'admin' ? 'एडमिन' : 'आदमी') + '</td><td>' + (u.role === 'admin' ? '–' : u.hasDevice ? 'जुड़ा है' : '<span class="muted">अभी नहीं</span>') + '</td><td style="white-space:nowrap">' +
+        '<button class="btn ghost small" data-act="pw" data-u="' + esc(u.username) + '">नया पासवर्ड</button> ' +
+        (u.role !== 'admin' ? '<button class="btn ghost small" data-act="dev" data-u="' + esc(u.username) + '">फ़ोन रीसेट</button> ' : '') +
+        '<button class="btn ghost small" data-act="act" data-on="' + (u.active ? 0 : 1) + '" data-u="' + esc(u.username) + '">' + (u.active ? 'बंद करो' : 'चालू करो') + '</button></td></tr>';
+    }).join('');
+    $('uTbl').querySelectorAll('button').forEach(function (b) {
+      var u = b.getAttribute('data-u'), act = b.getAttribute('data-act');
+      b.onclick = function () {
+        if (act === 'pw') api('resetPassword', { username: u }).then(function (r) { showCred('नया पासवर्ड', r.username, r.password); }).catch(function (e) { modal('दिक्कत', esc(e.message)); });
+        if (act === 'dev') api('resetDevice', { username: u }).then(function () { modal('फ़ोन रीसेट', '<p>अब ' + esc(u) + ' किसी नए फ़ोन से लॉग-इन कर सकता है।</p>'); loadUsers(); });
+        if (act === 'act') api('setActive', { username: u, active: b.getAttribute('data-on') === '1' }).then(loadUsers).catch(function (e) { modal('दिक्कत', esc(e.message)); });
+      };
+    });
+  }).catch(function (e) { $('uTbl').innerHTML = '<tr><td class="err">' + esc(e.message) + '</td></tr>'; });
+}
+$('cpBtn').onclick = function () {
+  $('cpErr').textContent = '';
+  api('changePassword', { oldPassword: $('cpOld').value, newPassword: $('cpNew').value }).then(function () {
+    $('cpOld').value = ''; $('cpNew').value = ''; $('cpErr').innerHTML = '<span class="ok">पासवर्ड बदल गया।</span>';
+  }).catch(function (e) { $('cpErr').textContent = e.message; });
+};
+
+/* ---------------- inställningar ---------------- */
+var SKEYS = ['autoStopTime', 'maxShiftHours', 'stopMinutes', 'stopRadius', 'doneMinutes', 'awayMinutes', 'retentionMonths', 'deviceBinding', 'workTypes'];
+function loadSettings() {
+  $('workerLink').textContent = workerUrl();
+  api('me').then(function (p) { SKEYS.forEach(function (k) { $('st_' + k).value = p.settings[k]; }); });
+}
+$('stSave').onclick = function () {
+  var s = {};
+  SKEYS.forEach(function (k) { s[k] = $('st_' + k).type === 'number' ? Number($('st_' + k).value) : $('st_' + k).value.trim(); });
+  if (s.autoStopTime && !/^\d{1,2}:\d{2}$/.test(s.autoStopTime)) { $('stErr').textContent = 'समय ऐसे लिखो: 19:00'; return; }
+  api('saveSettings', { settings: s }).then(function () { $('stErr').innerHTML = '<span class="ok">सेव हो गया। आदमियों के फ़ोन पर अगली बार पेज खुलने पर लागू होगा।</span>'; })
+    .catch(function (e) { $('stErr').textContent = e.message; });
+};
+
+show();
+})();
+</script>
+</body>
+</html>

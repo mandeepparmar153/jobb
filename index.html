@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f4d33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mod Jobb">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>Mod Jobb</title>
+<style>
+  :root {
+    --bg: #f3f1ea; --card: #ffffff; --ink: #1d2420; --muted: #66706a; --line: #dcd8cc;
+    --brand: #1f4d33; --brand-ink: #ffffff; --go: #2f7d4a; --stop: #b3392f; --warn: #b7791f;
+    --soft: #e7efe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121614; --card: #1b211e; --ink: #e8ece9; --muted: #9aa59f; --line: #2c3530; --soft: #1f2b24; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.45 system-ui, -apple-system, "Segoe UI", "Noto Sans Devanagari", sans-serif; }
+  body { padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px); min-height: 100vh; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 10px; }
+  header .brand { font-weight: 700; letter-spacing: .2px; }
+  header .brand small { display: block; font-weight: 400; color: var(--muted); font-size: 13px; }
+  .lang { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 20px; padding: 6px 12px; font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 12px 0; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 6px; }
+  input, select { width: 100%; font-size: 18px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); }
+  button { font: inherit; cursor: pointer; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 16px; font-size: 19px; font-weight: 700; margin-top: 16px; }
+  .btn.primary { background: var(--brand); color: var(--brand-ink); }
+  .btn.go { background: var(--go); color: #fff; font-size: 24px; padding: 22px; }
+  .btn.stop { background: var(--stop); color: #fff; font-size: 22px; padding: 20px; }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); font-weight: 500; font-size: 16px; padding: 12px; }
+  .btn.done { background: var(--soft); color: var(--ink); border: 1px solid var(--line); }
+  .btn:disabled { opacity: .5; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .err { color: var(--stop); font-size: 15px; margin-top: 10px; min-height: 1em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 1px solid var(--line); border-radius: 22px; padding: 9px 14px; background: var(--bg); font-size: 16px; }
+  .chip.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .status { text-align: center; padding: 22px 18px; }
+  .pulse { width: 18px; height: 18px; border-radius: 50%; background: var(--go); display: inline-block; vertical-align: middle; margin-right: 8px; animation: p 1.6s infinite; }
+  .pulse.bad { background: var(--stop); animation: none; }
+  .pulse.weak { background: var(--warn); }
+  @keyframes p { 0% { box-shadow: 0 0 0 0 rgba(47,125,74,.55); } 70% { box-shadow: 0 0 0 16px rgba(47,125,74,0); } 100% { box-shadow: 0 0 0 0 rgba(47,125,74,0); } }
+  .big { font-size: 46px; font-weight: 800; font-variant-numeric: tabular-nums; margin: 10px 0 2px; letter-spacing: 1px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; text-align: left; }
+  .grid div { background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+  .grid b { display: block; font-size: 16px; }
+  .grid span { font-size: 13px; color: var(--muted); }
+  .banner { border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 15px; display: none; }
+  .banner.show { display: block; }
+  .banner.red { background: #f8dcd8; color: #6b1d16; }
+  .banner.amber { background: #f6e7c9; color: #5c3d07; }
+  .banner.green { background: #d8eedf; color: #17452a; }
+  .list { margin: 8px 0 0; padding: 0; list-style: none; }
+  .list li { padding: 8px 0; border-top: 1px solid var(--line); font-size: 15px; display: flex; justify-content: space-between; gap: 10px; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: flex-end; justify-content: center; z-index: 50; padding: 16px; }
+  .modal.show { display: flex; }
+  .modal .card { width: 100%; max-width: 480px; margin: 0 0 env(safe-area-inset-bottom); }
+  .modal h3 { margin: 0 0 8px; font-size: 20px; }
+  .row { display: flex; gap: 10px; }
+  .row .btn { margin-top: 14px; }
+  .hidden { display: none !important; }
+  .tapper { position: fixed; inset: 0; background: var(--brand); color: #fff; display: none; align-items: center; justify-content: center; text-align: center; padding: 30px; font-size: 24px; font-weight: 700; z-index: 60; }
+  .tapper.show { display: flex; }
+  footer { text-align: center; margin-top: 20px; }
+  footer button { background: none; border: 0; color: var(--muted); text-decoration: underline; font-size: 14px; margin: 0 8px; padding: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Mod Entreprenad<small id="hdrName"></small></div>
+  <button class="lang" id="langBtn">SV</button>
+</header>
+
+<!-- Inloggning -->
+<section id="scrLogin" class="hidden">
+  <div class="card">
+    <h2 style="margin:0 0 4px" data-t="title"></h2>
+    <div class="muted" data-t="notice"></div>
+    <label data-t="username"></label>
+    <input id="inUser" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <label data-t="password"></label>
+    <input id="inPass" type="password" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>
+    <button class="btn primary" id="btnLogin" data-t="login"></button>
+  </div>
+  <p class="muted" data-t="installHint"></p>
+</section>
+
+<!-- Redo att starta -->
+<section id="scrHome" class="hidden">
+  <div class="card">
+    <label data-t="workType"></label>
+    <div class="chips" id="workTypes"></div>
+    <div id="compWrap">
+      <label data-t="companions"></label>
+      <div class="chips" id="companions"></div>
+    </div>
+    <div class="err" id="homeErr"></div>
+    <button class="btn go" id="btnStart" data-t="start"></button>
+    <p class="muted" style="margin-bottom:0" data-t="notice"></p>
+  </div>
+  <div class="card" id="todayCard">
+    <b data-t="today"></b> <span class="muted" id="todayTotal"></span>
+    <ul class="list" id="todayList"></ul>
+  </div>
+</section>
+
+<!-- Spårning pågår -->
+<section id="scrTrack" class="hidden">
+  <div class="banner red" id="bnGps"></div>
+  <div class="banner amber" id="bnInfo"></div>
+  <div class="card status">
+    <div><span class="pulse" id="dot"></span><b id="trkState"></b></div>
+    <div class="big" id="elapsed">0:00:00</div>
+    <div class="muted" id="trkWhat"></div>
+    <div class="grid">
+      <div><b id="gStart">–</b><span data-t="since"></span></div>
+      <div><b id="gGps">–</b><span data-t="gps"></span></div>
+      <div><b id="gQueue">0</b><span data-t="waiting"></span></div>
+      <div><b id="gSite">–</b><span data-t="nearSite"></span></div>
+    </div>
+  </div>
+  <p class="muted" data-t="keepOpen"></p>
+  <button class="btn done" id="btnSiteDone" data-t="siteDone"></button>
+  <ul class="list" id="doneList"></ul>
+  <button class="btn stop" id="btnEnd" data-t="end"></button>
+</section>
+
+<footer id="foot" class="hidden">
+  <button id="btnPw" data-t="changePw"></button>
+  <button id="btnLogout" data-t="logout"></button>
+</footer>
+
+<div class="modal" id="modal"><div class="card">
+  <h3 id="mTitle"></h3>
+  <div id="mBody"></div>
+  <div class="row" id="mBtns"></div>
+</div></div>
+
+<div class="tapper" id="tapper"></div>
+
+<script src="config.js"></script>
+<script src="geo.js"></script>
+<script>
+(function () {
+'use strict';
+var CFG = window.APP_CONFIG || {};
+var KEY = 'modgps_v1';
+var MAX_ACC = 60;           // sämre noggrannhet än så sparas inte
+var FLUSH_MS = 120000;      // skicka till servern varannan minut
+var POLL_MS = 60000;        // be om position minst varje minut
+
+var T = {
+  hi: {
+    title: 'काम की ट्रैकिंग', notice: 'लोकेशन सिर्फ़ काम के समय ली जाती है — "काम शुरू" से "काम ख़त्म" तक।',
+    username: 'यूज़रनेम', password: 'पासवर्ड', login: 'लॉग-इन', loggingIn: 'लॉग-इन हो रहा है…',
+    installHint: 'टिप: ब्राउज़र के मेन्यू से "होम स्क्रीन पर जोड़ें" दबाओ, ताकि ये ऐप की तरह खुले।',
+    workType: 'काम का प्रकार', companions: 'साथ में कौन है? (जिनके पास फ़ोन नहीं)', start: 'काम शुरू',
+    today: 'आज', end: 'काम ख़त्म', siteDone: 'यहाँ काम पूरा', since: 'शुरू हुआ', gps: 'GPS',
+    waiting: 'भेजना बाकी', nearSite: 'पास की जगह', tracking: 'ट्रैकिंग चालू है',
+    keepOpen: 'ये पेज खुला रखो। फ़ोन लॉक मत करो। कॉल या दूसरी ऐप के बाद वापस यहीं आओ।',
+    gpsWeak: 'GPS कमज़ोर है', gpsNone: 'GPS नहीं मिल रहा! खुली जगह पर जाओ और ये पेज खुला रखो।',
+    offline: 'नेटवर्क नहीं है। डेटा फ़ोन में सेव हो रहा है, नेटवर्क आते ही चला जाएगा।',
+    confirmEnd: 'काम ख़त्म करना है?', yes: 'हाँ', no: 'नहीं', cancel: 'रद्द', ok: 'ठीक है', save: 'सेव',
+    noSite: 'आसपास कोई काम की जगह नहीं मिली।', siteDoneQ: 'इस जगह का काम पूरा हुआ?', siteMarked: 'पूरा',
+    awayTitle: 'काम ख़त्म हो गया?', awayQ: 'आप काफ़ी देर से किसी काम की जगह पर नहीं हो।',
+    awayYes: 'हाँ, ख़त्म', awayNo: 'नहीं, काम चल रहा है', autoIn: 'जवाब न मिला तो अपने आप ख़त्म होगा:',
+    resumeTap: 'ट्रैकिंग जारी रखने के लिए यहाँ दबाओ', minutes: 'मिनट',
+    permDenied: 'लोकेशन की अनुमति नहीं है। फ़ोन की सेटिंग में इस पेज को लोकेशन की अनुमति दो, फिर पेज दोबारा खोलो।',
+    wakeFail: 'स्क्रीन जगी नहीं रह पा रही। फ़ोन की सेटिंग में ऑटो-लॉक बंद कर दो।',
+    gapBack: 'ट्रैकिंग बीच में बंद थी:', logout: 'लॉग-आउट', changePw: 'पासवर्ड बदलो',
+    oldPw: 'पुराना पासवर्ड', newPw: 'नया पासवर्ड (कम से कम 6 अक्षर)', pwChanged: 'पासवर्ड बदल गया।',
+    logoutBlocked: 'पहले काम ख़त्म करो।', autoEnded: 'काम अपने आप ख़त्म कर दिया गया।',
+    ended: 'काम ख़त्म। इस बार का समय:', pickType: 'काम का प्रकार चुनो।', reLogin: 'दोबारा लॉग-इन करो। ट्रैकिंग चालू है, डेटा सेव हो रहा है।',
+    e_login: 'ग़लत यूज़रनेम या पासवर्ड।', e_device: 'ये अकाउंट किसी दूसरे फ़ोन से जुड़ा है। मैनेजर से रीसेट करवाओ।',
+    e_locked: 'बहुत बार ग़लत कोशिश। 15 मिनट बाद कोशिश करो।', e_net: 'नेटवर्क की दिक्कत। दोबारा कोशिश करो।',
+    e_config: 'सेटअप अधूरा है: config.js में API_URL डालो।', e_weak: 'नया पासवर्ड कम से कम 6 अक्षर का हो।',
+    noGeo: 'इस फ़ोन/ब्राउज़र में GPS नहीं चल रहा।',
+  },
+  sv: {
+    title: 'Arbetsspårning', notice: 'Positionen sparas bara under arbetstid – från "Starta jobb" till "Avsluta jobb".',
+    username: 'Användarnamn', password: 'Lösenord', login: 'Logga in', loggingIn: 'Loggar in…',
+    installHint: 'Tips: välj "Lägg till på hemskärmen" i webbläsarens meny så öppnas den som en app.',
+    workType: 'Typ av arbete', companions: 'Vem är med? (de utan telefon)', start: 'Starta jobb',
+    today: 'Idag', end: 'Avsluta jobb', siteDone: 'Klart här', since: 'Startade', gps: 'GPS',
+    waiting: 'Ej skickat', nearSite: 'Närmaste plats', tracking: 'Spårning pågår',
+    keepOpen: 'Håll sidan öppen. Lås inte telefonen. Kom tillbaka hit efter samtal eller andra appar.',
+    gpsWeak: 'Svag GPS', gpsNone: 'Ingen GPS! Gå ut i det fria och håll sidan öppen.',
+    offline: 'Ingen täckning. Datan sparas i telefonen och skickas när nätet är tillbaka.',
+    confirmEnd: 'Avsluta jobbet?', yes: 'Ja', no: 'Nej', cancel: 'Avbryt', ok: 'OK', save: 'Spara',
+    noSite: 'Ingen arbetsplats i närheten.', siteDoneQ: 'Är jobbet klart på den här platsen?', siteMarked: 'Klart',
+    awayTitle: 'Är jobbet slut?', awayQ: 'Du har varit borta från arbetsplatserna en stund.',
+    awayYes: 'Ja, slut', awayNo: 'Nej, jobbar', autoIn: 'Avslutas automatiskt om du inte svarar:',
+    resumeTap: 'Tryck här för att fortsätta spårningen', minutes: 'min',
+    permDenied: 'Platsåtkomst saknas. Tillåt plats för den här sidan i telefonens inställningar och öppna sidan igen.',
+    wakeFail: 'Skärmen kan inte hållas vaken. Stäng av automatiskt lås i telefonens inställningar.',
+    gapBack: 'Spårningen var avbruten:', logout: 'Logga ut', changePw: 'Byt lösenord',
+    oldPw: 'Nuvarande lösenord', newPw: 'Nytt lösenord (minst 6 tecken)', pwChanged: 'Lösenordet är bytt.',
+    logoutBlocked: 'Avsluta jobbet först.', autoEnded: 'Jobbet avslutades automatiskt.',
+    ended: 'Jobbet avslutat. Tid den här gången:', pickType: 'Välj typ av arbete.', reLogin: 'Logga in igen. Spårningen fortsätter och datan sparas.',
+    e_login: 'Fel användarnamn eller lösenord.', e_device: 'Kontot är kopplat till en annan telefon. Be chefen återställa.',
+    e_locked: 'För många försök. Vänta 15 minuter.', e_net: 'Nätverksproblem. Försök igen.',
+    e_config: 'Inställning saknas: lägg in API_URL i config.js.', e_weak: 'Nytt lösenord måste ha minst 6 tecken.',
+    noGeo: 'GPS fungerar inte i den här telefonen/webbläsaren.',
+  },
+};
+
+/* ---------- tillstånd ---------- */
+var S = {};
+try { S = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { S = {}; }
+function uuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) { var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+}
+S.deviceId = S.deviceId || uuid();
+S.lang = S.lang || 'hi';
+S.queue = S.queue || [];
+S.pending = S.pending || [];
+S.history = S.history || [];
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+save();
+
+function t(k) { return (T[S.lang] && T[S.lang][k]) || T.hi[k] || k; }
+var $ = function (id) { return document.getElementById(id); };
+
+function applyLang() {
+  document.documentElement.lang = S.lang;
+  document.querySelectorAll('[data-t]').forEach(function (el) { el.textContent = t(el.getAttribute('data-t')); });
+  $('langBtn').textContent = S.lang === 'hi' ? 'SV' : 'हिं';
+}
+
+/* ---------- server ---------- */
+function api(action, payload) {
+  if (!CFG.API_URL || /KLISTRA/.test(CFG.API_URL)) return Promise.reject(Object.assign(new Error('config'), { code: 'config' }));
+  var body = JSON.stringify(Object.assign({ action: action, token: S.token }, payload || {}));
+  return fetch(CFG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body })
+    .catch(function () { throw Object.assign(new Error('net'), { code: 'net' }); })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (!j.ok) throw Object.assign(new Error(j.message), { code: j.error });
+      return j.data;
+    });
+}
+function errText(e) { return T[S.lang]['e_' + e.code] || e.message || t('e_net'); }
+
+/* ---------- kö och sändning ---------- */
+function movePending() {
+  if (S.pending.length && S.shift) {
+    S.queue.push({ opId: uuid(), type: 'points', shiftId: S.shift.id, pts: S.pending });
+    S.pending = [];
+  }
+}
+function queue(op) { movePending(); op.opId = uuid(); S.queue.push(op); save(); updateUI(); }
+
+var sending = false, online = true;
+function flush() {
+  if (sending || !S.token) return Promise.resolve();
+  movePending(); save();
+  if (!S.queue.length) return Promise.resolve();
+  sending = true;
+  var batch = S.queue.slice(0, 30);
+  return api('sync', { ops: batch }).then(function (res) {
+    var done = {}; res.done.forEach(function (id) { done[id] = 1; });
+    S.queue = S.queue.filter(function (op) { return !done[op.opId]; });
+    save(); online = true; sending = false; updateUI();
+    if (S.queue.length && res.done.length) return flush();
+  }).catch(function (e) {
+    sending = false;
+    if (e.code === 'auth') { S.token = null; save(); render(); showInfo(t('reLogin')); }
+    else online = false;
+    updateUI();
+  });
+}
+function beacon() {
+  movePending(); save();
+  if (!S.queue.length || !S.token || !navigator.sendBeacon || !CFG.API_URL) return;
+  try {
+    navigator.sendBeacon(CFG.API_URL, new Blob([JSON.stringify({ action: 'sync', token: S.token, ops: S.queue.slice(0, 30) })], { type: 'text/plain;charset=utf-8' }));
+  } catch (e) {}
+}
+
+/* ---------- skärm vaken ---------- */
+var wakeLock = null, noSleep = null;
+function keepAwake() {
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').then(function (wl) {
+      wakeLock = wl;
+      wl.addEventListener('release', function () { wakeLock = null; });
+    }).catch(function () { fallbackAwake(); });
+  } else fallbackAwake();
+}
+function fallbackAwake() {
+  if (noSleep) { try { noSleep.enable(); } catch (e) {} return; }
+  var s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js';
+  s.onload = function () { try { noSleep = new window.NoSleep(); noSleep.enable(); } catch (e) { showInfo(t('wakeFail')); } };
+  s.onerror = function () { showInfo(t('wakeFail')); };
+  document.head.appendChild(s);
+}
+function releaseAwake() {
+  if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+  if (noSleep) { try { noSleep.disable(); } catch (e) {} }
+}
+
+/* ---------- ljud ---------- */
+var audio = null;
+function unlockAudio() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (e) {} }
+function alarm() {
+  try { if (navigator.vibrate) navigator.vibrate([400, 200, 400]); } catch (e) {}
+  if (!audio) return;
+  try {
+    [0, 0.35].forEach(function (d) {
+      var o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(audio.destination);
+      g.gain.setValueAtTime(0.3, audio.currentTime + d);
+      o.start(audio.currentTime + d); o.stop(audio.currentTime + d + 0.25);
+    });
+  } catch (e) {}
+}
+
+/* ---------- GPS ---------- */
+var watchId = null, pollTimer = null, lastAcc = null, geoDenied = false;
+function startGeo() {
+  if (!navigator.geolocation) { showGps(t('noGeo')); return; }
+  stopGeo();
+  var opt = { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 };
+  watchId = navigator.geolocation.watchPosition(onPos, onGeoErr, opt);
+  pollTimer = setInterval(function () {
+    if (document.visibilityState === 'visible') navigator.geolocation.getCurrentPosition(onPos, onGeoErr, { enableHighAccuracy: true, maximumAge: 20000, timeout: 25000 });
+  }, POLL_MS);
+}
+function stopGeo() {
+  if (watchId != null) navigator.geolocation.clearWatch(watchId);
+  if (pollTimer) clearInterval(pollTimer);
+  watchId = null; pollTimer = null;
+}
+function onGeoErr(e) {
+  if (e && e.code === 1) { geoDenied = true; showGps(t('permDenied')); }
+}
+
+function onPos(p) {
+  if (!S.shift) return;
+  var now = Date.now();
+  var c = p.coords, ts = p.timestamp || now;
+  if (ts > now + 60000) ts = now;
+  geoDenied = false;
+  lastAcc = Math.round(c.accuracy);
+
+  // lucka: inga positioner på ett tag (sidan stängd, telefonen låst…)
+  if (S.lastFixTs && now - S.lastFixTs > 3 * 60000) {
+    var mins = Math.round((now - S.lastFixTs) / 60000);
+    queue({ type: 'event', kind: 'gap', shiftId: S.shift.id, ts: now, lat: c.latitude, lng: c.longitude, note: JSON.stringify({ from: S.lastFixTs, to: now, minutes: mins }) });
+    showInfo(t('gapBack') + ' ' + mins + ' ' + t('minutes'));
+  }
+  S.lastFixTs = now;
+
+  if (c.accuracy > MAX_ACC) { save(); updateUI(); return; }
+
+  var last = S.lastRec, rec = false;
+  if (!last) rec = true;
+  else {
+    var d = Geo.dist(last.lat, last.lng, c.latitude, c.longitude), dt = ts - last.ts;
+    if (dt < 0) rec = false;
+    else if (d >= 100 && dt >= 3000) rec = true;
+    else if (d >= 20 && dt >= 20000) rec = true;
+    else if (d >= 8 && dt >= 60000) rec = true;
+    else if (dt >= 300000) rec = true;
+  }
+  if (rec) {
+    S.pending.push([ts, +c.latitude.toFixed(6), +c.longitude.toFixed(6), Math.round(c.accuracy), c.speed == null ? null : Math.round(c.speed * 10) / 10]);
+    S.lastRec = { ts: ts, lat: c.latitude, lng: c.longitude };
+  }
+  S.here = { lat: c.latitude, lng: c.longitude, ts: now, acc: Math.round(c.accuracy) };
+
+  // stilla-detektering (för "är jobbet slut?")
+  var a = S.anchor;
+  if (!a || Geo.dist(a.lat, a.lng, c.latitude, c.longitude) > 100) S.anchor = { lat: c.latitude, lng: c.longitude, ts: ts };
+  save(); updateUI();
+}
+
+/* ---------- pass ---------- */
+function prof() { return S.profile || { settings: {}, workTypes: [], sites: [], coworkers: [] }; }
+
+function startShift() {
+  if (!S.workType) { $('homeErr').textContent = t('pickType'); return; }
+  unlockAudio();
+  var now = Date.now();
+  S.shift = { id: uuid(), start: now, workType: S.workType, companions: (S.companions || []).slice() };
+  S.lastFixTs = now; S.lastRec = null; S.anchor = null; S.doneSites = []; S.awayAskedAt = 0;
+  queue({ type: 'start', shiftId: S.shift.id, ts: now, workType: S.shift.workType, companions: S.shift.companions });
+  keepAwake(); startGeo(); flush(); render();
+}
+
+function endShift(reason, ts) {
+  if (!S.shift) return;
+  var end = ts || Date.now();
+  // sista kända position som slutpunkt (om den är nyare än den senast sparade)
+  if (!ts && S.here && (!S.lastRec || S.here.ts > S.lastRec.ts + 1000)) {
+    S.pending.push([S.here.ts, +S.here.lat.toFixed(6), +S.here.lng.toFixed(6), S.here.acc || 0, null]);
+  }
+  queue({ type: 'end', shiftId: S.shift.id, ts: end, reason: reason || 'manual' });
+  var ms = end - S.shift.start;
+  S.history.unshift({ start: S.shift.start, end: end, workType: S.shift.workType });
+  S.history = S.history.slice(0, 20);
+  S.shift = null; S.anchor = null; S.here = null;
+  save(); stopGeo(); releaseAwake(); closeModal(); flush(); render();
+  modal(/^auto/.test(reason || '') ? t('autoEnded') : t('end'), '<p>' + t('ended') + ' <b>' + hm(ms) + '</b></p>', [{ label: t('ok'), cls: 'primary' }]);
+}
+
+function markSiteDone() {
+  var p = prof(), h = S.here;
+  var near = h ? Geo.nearestSite(h.lat, h.lng, p.sites, 60) : null;
+  if (!near) { modal(t('siteDone'), '<p>' + t('noSite') + '</p>', [{ label: t('ok'), cls: 'primary' }]); return; }
+  modal(near.site.name, '<p>' + t('siteDoneQ') + '</p>', [
+    { label: t('no'), cls: 'ghost' },
+    { label: t('yes'), cls: 'primary', fn: function () {
+      queue({ type: 'event', kind: 'done', shiftId: S.shift.id, ts: Date.now(), siteId: near.site.id, lat: h.lat, lng: h.lng });
+      S.doneSites = S.doneSites || [];
+      S.doneSites.push({ name: near.site.name, ts: Date.now() });
+      save(); flush(); render();
+    } },
+  ]);
+}
+
+/* ---------- automatiska kontroller ---------- */
+var awayTimer = null;
+function checks() {
+  if (!S.shift) return;
+  var st = prof().settings || {}, now = Date.now();
+
+  // max antal timmar
+  if (st.maxShiftHours && now - S.shift.start > st.maxShiftHours * 3600000) { endShift('auto_maxhours'); return; }
+
+  // klockslag (gäller bara pass som startade före den tiden – nattplogning påverkas inte)
+  if (st.autoStopTime && /^\d{1,2}:\d{2}$/.test(st.autoStopTime)) {
+    var hm2 = st.autoStopTime.split(':'), d = new Date(S.shift.start);
+    d.setHours(+hm2[0], +hm2[1], 0, 0);
+    if (S.shift.start < d.getTime() && now >= d.getTime()) { endShift('auto_time'); return; }
+  }
+
+  // ingen GPS på länge medan sidan är öppen
+  if (document.visibilityState === 'visible') {
+    var noFix = now - (S.lastFixTs || now);
+    if (geoDenied || noFix > 120000) {
+      showGps(geoDenied ? t('permDenied') : t('gpsNone'));
+      if (!S.lastAlarm || now - S.lastAlarm > 120000) { S.lastAlarm = now; alarm(); }
+    } else showGps('');
+  }
+
+  // stilla länge utanför alla arbetsplatser -> fråga
+  var sites = prof().sites || [], a = S.anchor;
+  if (sites.length && a && !awayTimer && st.awayMinutes) {
+    var still = now - a.ts;
+    var nearAny = Geo.nearestSite(a.lat, a.lng, sites, 150);
+    if (!nearAny && still >= st.awayMinutes * 60000 && (!S.awayAskedAt || now - S.awayAskedAt > st.awayMinutes * 60000)) askAway(a.ts);
+  }
+}
+
+function askAway(sinceTs) {
+  S.awayAskedAt = Date.now(); save();
+  alarm();
+  var left = 300;
+  modal(t('awayTitle'), '<p>' + t('awayQ') + '</p><p class="muted">' + t('autoIn') + ' <b id="cd">5:00</b></p>', [
+    { label: t('awayNo'), cls: 'ghost', fn: function () { stopAway(); S.anchor = null; save(); } },
+    { label: t('awayYes'), cls: 'stop', fn: function () { stopAway(); endShift('away_confirmed', sinceTs); } },
+  ]);
+  awayTimer = setInterval(function () {
+    left--;
+    var el = $('cd'); if (el) el.textContent = Math.floor(left / 60) + ':' + ('0' + (left % 60)).slice(-2);
+    if (left <= 0) { stopAway(); endShift('auto_away', sinceTs); }
+  }, 1000);
+}
+function stopAway() { if (awayTimer) clearInterval(awayTimer); awayTimer = null; }
+
+/* ---------- UI ---------- */
+function hm(ms) { var m = Math.max(0, Math.round(ms / 60000)); return Math.floor(m / 60) + ':' + ('0' + (m % 60)).slice(-2); }
+function hms(ms) { var s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 3600) + ':' + ('0' + Math.floor(s % 3600 / 60)).slice(-2) + ':' + ('0' + (s % 60)).slice(-2); }
+function clock(ts) { var d = new Date(ts); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+function showGps(msg) { var b = $('bnGps'); b.textContent = msg; b.classList.toggle('show', !!msg); }
+var infoTimer = null;
+function showInfo(msg) {
+  var b = $('bnInfo'); b.textContent = msg; b.classList.add('show');
+  clearTimeout(infoTimer); infoTimer = setTimeout(function () { b.classList.remove('show'); }, 20000);
+}
+
+function modal(title, html, btns) {
+  $('mTitle').textContent = title; $('mBody').innerHTML = html;
+  var row = $('mBtns'); row.innerHTML = '';
+  btns.forEach(function (b) {
+    var el = document.createElement('button');
+    el.className = 'btn ' + (b.cls || 'primary'); el.textContent = b.label;
+    el.onclick = function () { if (!b.keep) closeModal(); if (b.fn) b.fn(); };
+    row.appendChild(el);
+  });
+  $('modal').classList.add('show');
+}
+function closeModal() { $('modal').classList.remove('show'); }
+
+function render() {
+  applyLang();
+  var p = prof();
+  var loggedIn = !!S.token;
+  $('scrLogin').classList.toggle('hidden', loggedIn);
+  $('scrHome').classList.toggle('hidden', !loggedIn || !!S.shift);
+  $('scrTrack').classList.toggle('hidden', !loggedIn || !S.shift);
+  $('foot').classList.toggle('hidden', !loggedIn);
+  $('hdrName').textContent = loggedIn ? (p.name || '') : '';
+  if (!loggedIn) return;
+
+  // arbetstyper
+  var wt = $('workTypes'); wt.innerHTML = '';
+  if (S.workType && p.workTypes.indexOf(S.workType) < 0) S.workType = null;
+  if (!S.workType && p.workTypes.length === 1) S.workType = p.workTypes[0];
+  p.workTypes.forEach(function (w) {
+    var b = document.createElement('button'); b.className = 'chip' + (S.workType === w ? ' on' : ''); b.textContent = w;
+    b.onclick = function () { S.workType = w; save(); $('homeErr').textContent = ''; render(); };
+    wt.appendChild(b);
+  });
+  // kollegor
+  var cw = $('companions'); cw.innerHTML = '';
+  S.companions = (S.companions || []).filter(function (u) { return p.coworkers.some(function (c) { return c.username === u; }); });
+  $('compWrap').classList.toggle('hidden', !p.coworkers.length);
+  p.coworkers.forEach(function (c) {
+    var on = S.companions.indexOf(c.username) >= 0;
+    var b = document.createElement('button'); b.className = 'chip' + (on ? ' on' : ''); b.textContent = c.name;
+    b.onclick = function () {
+      if (on) S.companions = S.companions.filter(function (x) { return x !== c.username; }); else S.companions.push(c.username);
+      save(); render();
+    };
+    cw.appendChild(b);
+  });
+  // idag
+  var today = new Date().toDateString(), tot = 0, ul = $('todayList'); ul.innerHTML = '';
+  S.history.filter(function (h) { return new Date(h.start).toDateString() === today; }).forEach(function (h) {
+    tot += h.end - h.start;
+    var li = document.createElement('li');
+    li.innerHTML = '<span>' + clock(h.start) + '–' + clock(h.end) + ' · ' + esc(h.workType) + '</span><b>' + hm(h.end - h.start) + '</b>';
+    ul.appendChild(li);
+  });
+  $('todayTotal').textContent = tot ? hm(tot) : '–';
+  $('todayCard').classList.toggle('hidden', !tot);
+
+  // klara platser
+  var dl = $('doneList'); dl.innerHTML = '';
+  (S.doneSites || []).forEach(function (d) {
+    var li = document.createElement('li'); li.innerHTML = '<span>✓ ' + esc(d.name) + '</span><span class="muted">' + clock(d.ts) + '</span>'; dl.appendChild(li);
+  });
+  $('btnSiteDone').classList.toggle('hidden', !(p.sites || []).length);
+  updateUI();
+}
+
+function updateUI() {
+  if (!S.shift) return;
+  var now = Date.now();
+  $('elapsed').textContent = hms(now - S.shift.start);
+  $('gStart').textContent = clock(S.shift.start);
+  var comp = (S.shift.companions || []).map(function (u) { var c = prof().coworkers.find(function (x) { return x.username === u; }); return c ? c.name : u; });
+  $('trkWhat').textContent = S.shift.workType + (comp.length ? ' · + ' + comp.join(', ') : '');
+  var fixAge = now - (S.lastFixTs || 0);
+  var bad = geoDenied || fixAge > 120000, weak = !bad && lastAcc != null && lastAcc > MAX_ACC;
+  $('dot').className = 'pulse' + (bad ? ' bad' : weak ? ' weak' : '');
+  $('trkState').textContent = bad ? t('gpsNone').split('!')[0] : weak ? t('gpsWeak') : t('tracking');
+  $('gGps').textContent = lastAcc == null ? '…' : '±' + lastAcc + ' m';
+  var n = S.pending.length + S.queue.reduce(function (s, op) { return s + (op.type === 'points' ? op.pts.length : 1); }, 0);
+  $('gQueue').textContent = n ? n : '✓';
+  var near = S.here ? Geo.nearestSite(S.here.lat, S.here.lng, prof().sites, 300) : null;
+  $('gSite').textContent = near ? near.site.name : '–';
+  if (!online && !$('bnInfo').classList.contains('show')) showInfo(t('offline'));
+}
+
+/* ---------- händelser ---------- */
+$('langBtn').onclick = function () { S.lang = S.lang === 'hi' ? 'sv' : 'hi'; save(); render(); };
+
+$('btnLogin').onclick = function () {
+  var u = $('inUser').value.trim().toLowerCase(), pw = $('inPass').value;
+  if (!u || !pw) return;
+  var btn = this; btn.disabled = true; btn.textContent = t('loggingIn'); $('loginErr').textContent = '';
+  api('login', { username: u, password: pw, deviceId: S.deviceId }).then(function (r) {
+    S.token = r.token; S.profile = r.profile; save();
+    $('inPass').value = ''; render(); flush();
+  }).catch(function (e) { $('loginErr').textContent = errText(e); })
+    .then(function () { btn.disabled = false; btn.textContent = t('login'); });
+};
+$('inPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
+
+$('btnStart').onclick = startShift;
+$('btnEnd').onclick = function () {
+  modal(t('confirmEnd'), '', [{ label: t('no'), cls: 'ghost' }, { label: t('yes'), cls: 'stop', fn: function () { endShift('manual'); } }]);
+};
+$('btnSiteDone').onclick = markSiteDone;
+
+$('btnLogout').onclick = function () {
+  if (S.shift) { modal(t('logout'), '<p>' + t('logoutBlocked') + '</p>', [{ label: t('ok') }]); return; }
+  flush().then(function () {
+    api('logout').catch(function () {});
+    S.token = null; S.profile = null; save(); render();
+  });
+};
+$('btnPw').onclick = function () {
+  modal(t('changePw'),
+    '<label>' + t('oldPw') + '</label><input id="pwOld" type="password"><label>' + t('newPw') + '</label><input id="pwNew" type="password"><div class="err" id="pwErr"></div>',
+    [{ label: t('cancel'), cls: 'ghost' }, { label: t('save'), keep: true, fn: function () {
+      api('changePassword', { oldPassword: $('pwOld').value, newPassword: $('pwNew').value })
+        .then(function () { closeModal(); showInfo(t('pwChanged')); })
+        .catch(function (e) { $('pwErr').textContent = errText(e); });
+    } }]);
+};
+
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') { beacon(); }
+  else if (S.shift) { keepAwake(); if (navigator.geolocation) navigator.geolocation.getCurrentPosition(onPos, onGeoErr, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }); flush(); }
+});
+window.addEventListener('pagehide', beacon);
+window.addEventListener('online', function () { online = true; flush(); });
+
+setInterval(updateUI, 1000);
+setInterval(checks, 20000);
+setInterval(flush, FLUSH_MS);
+
+/* ---------- start ---------- */
+render();
+if (S.token) {
+  api('me').then(function (p) { S.profile = p; save(); render(); }).catch(function (e) {
+    if (e.code === 'auth') { S.token = null; save(); render(); }
+  });
+  flush();
+}
+if (S.shift) {
+  // sidan laddades om mitt i ett pass: fortsätt (kräver ett tryck för skärmlåset)
+  startGeo();
+  var tap = $('tapper'); tap.textContent = t('resumeTap'); tap.classList.add('show');
+  tap.onclick = function () { tap.classList.remove('show'); unlockAudio(); keepAwake(); };
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>
