@@ -1,5 +1,5 @@
 // Enkel offline-cache så att sidan öppnas även utan täckning.
-var CACHE = 'modgps-v1';
+var CACHE = 'modgps-v2';
 var FILES = ['./', 'index.html', 'config.js', 'geo.js', 'manifest.json', 'icon-192.png'];
 
 self.addEventListener('install', function (e) {

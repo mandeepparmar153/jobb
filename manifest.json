@@ -1,6 +1,6 @@
 {
-  "name": "Mod Entreprenad – Jobb",
-  "short_name": "Mod Jobb",
+  "name": "Mod Entreprenad AB",
+  "short_name": "Mod Entreprenad",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
